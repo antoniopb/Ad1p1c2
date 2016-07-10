@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "ler_gastos <- function(arquivo = \"../data/ano-atual.csv\"){\n  #' Lê um csv criado a partir dos dados de gastos dos deputados da \n  #' Câmara e seta os tipos de colunas mais convenientemente. \n  #' Versão sem readr, para máquinas onde não é possível instalar esse pacote. \n  #' É um pouco mais lenta que a com readr.\n  require(\"dplyr\", warn.conflicts = FALSE)\n  \n  gastos = read.csv(arquivo, stringsAsFactors = FALSE, encoding = \"UTF-8\")\n  gastos = gastos %>% \n    mutate_each(funs(as.factor), sgPartido, sgUF, txNomeParlamentar, indTipoDocumento)\n  return(gastos)\n} ",
+    "created" : 1468074441414.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3814916379",
+    "id" : "B36104D4",
+    "lastKnownWriteTime" : 1468126557,
+    "last_content_update" : 1468126557307,
+    "path" : "F:/Workspace/AD1/P1C2/libs/gastos_lib.R",
+    "project_path" : "libs/gastos_lib.R",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

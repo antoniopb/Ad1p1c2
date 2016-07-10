@@ -1,0 +1,150 @@
+---
+title: "Análise de Dados"
+author: "Antonio Eduardo Chaves de Medeiros"
+date: "8 de julho de 2016"
+output: html_document
+---
+
+```{r, echo=FALSE}
+library(knitr)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+source('../libs/gastos_lib.R')
+
+theme_set(theme_bw())
+```
+
+
+##Dados 
+
+Os dados que iremos analizar são relativos aos gastos dos parlamentares registrados na Câmara dos deputados. 
+
+```{r, echo=FALSE}
+data.all = ler_gastos()
+
+summary(data.all)
+```
+
+
+##Numero de parlamentares por partido
+
+```{r, echo=FALSE}
+  
+qtdPorPartido = data.all %>% 
+  select(txNomeParlamentar, sgPartido) %>% 
+  distinct() %>%
+  group_by(sgPartido) %>%
+  summarise(parlamentaresPorPartido = n()) 
+  
+ggplot(qtdPorPartido, mapping = aes(x = reorder(sgPartido, -parlamentaresPorPartido), y= parlamentaresPorPartido)) + 
+  geom_bar(stat="identity") + 
+  xlab("Partido") + 
+  ylab("Quantidade de parlamentares") +
+  coord_flip()
+```
+
+PT e PMDB demostram o porque de serem dois dos mais importantes partidos politicos no Brasil, apresentando quantidade de parlamentares muito superiores à maioria dos outros partidos brasileiros.
+
+## Gastos por partido
+
+```{r, echo=FALSE}
+
+gastosPorPartido = data.all %>%
+  select(vlrDocumento, sgPartido) %>%
+  group_by(sgPartido) %>%
+  summarise(gastos = sum(abs(vlrDocumento)))
+
+ggplot(gastosPorPartido, mapping = aes(x = reorder(sgPartido, -gastos), y= gastos)) + 
+  geom_bar(stat="identity") + 
+  xlab("Partido") + 
+  ylab("Gastos") +
+  coord_flip()
+
+```
+
+PT e PMDM tambem aparecem na liderança no que se diz respeito aos gastos de seus parlamentares, a relação entre o tamanho do partido e a quantidade de gastos de seus deputados parece apresentar linearidade.
+
+##Total gasto em cada categoria
+
+```{r, echo=FALSE}
+
+despesasTotal = data.all %>%
+  select(vlrDocumento, txtDescricao) %>%
+  group_by(txtDescricao) %>%
+  summarise(despesas = sum(abs(vlrDocumento)))
+
+
+ggplot(despesasTotal, mapping = aes(x = reorder(txtDescricao, -despesas), y= despesas)) + 
+  geom_bar(stat="identity") + 
+  xlab("Tipo de Despesa") + 
+  ylab("Gastos") +
+  coord_flip()
+
+
+```
+
+Emissão de Bilhetes Aéreos e Divulgação da Atividade Parlamentar apresentam-se como as maiores despesas parlamentares, se mostrando como quase o dobro de quase todos os outros grandes gastos dos deputados.
+
+##Variação dos gastos em cada categoria
+
+```{r, echo=FALSE}
+despesasCategoria = data.all %>%
+  select(vlrDocumento, txtDescricao) %>%
+  group_by(txtDescricao)
+
+  
+ggplot(despesasCategoria, mapping = aes(x = reorder(txtDescricao, -vlrDocumento), y= vlrDocumento)) + 
+  geom_boxplot() + 
+  geom_point(position = position_jitter(width = .2),
+             alpha = .7) +
+  xlab("Tipo de Despesa") + 
+  ylab("Gastos") +
+  coord_flip()
+
+```
+
+No gráficos podemos perceber que os gastos costumam ser de valores relativamente pequenos, se situando mais na casa de 0 aos 50000 reais, podemos perceber valores extremos como no caso de Emissões de passagens aéreas com valores negativos (Bilhetes de compensação, compensando outro bilhete emitido e não utilizado), e valores muito altos e discrepantes como no caso de alguns gastos com divulgação.
+
+Podemos perceber ainda que a categoria "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR" possui a maior variação de valores, variando de pequenos gastos, até despesas de dezenas de milhares de reais. O que pode a levantar o questionamento: 
+
+##Quais parlamentares tiveram tanta despesa com divulgação?
+
+```{r, echo=FALSE}
+despesasEmDivulgacao = data.all %>%
+  select(txNomeParlamentar, txtDescricao, vlrDocumento) %>%
+  group_by(txNomeParlamentar) %>%
+  filter(txtDescricao == "DIVULGAÇÃO DA ATIVIDADE PARLAMENTAR.") %>%
+  filter(vlrDocumento > 35000) %>%
+  summarise(despesas = sum(vlrDocumento))
+
+  
+ggplot(despesasEmDivulgacao, mapping = aes(x = reorder(txNomeParlamentar, despesas), y= despesas)) + 
+  geom_point() + 
+  xlab("Nome do parlamentar") + 
+  ylab("Gastos em divulgação") +
+  coord_flip()
+
+```
+
+Podemos ver que "Francisco Chapadinha" divulga bastante as atividades parlamentares, embora seja um parlamentar do qual nunca ouvi falar, muito menos das atividades que realiza.
+
+##Deputados que mais gastam
+
+```{r, echo=FALSE}
+despesasDoDeputado = data.all %>%
+  select(txNomeParlamentar, vlrDocumento) %>%
+  group_by(txNomeParlamentar) %>%
+  summarise(despesas = sum(vlrDocumento)) %>%
+  filter(despesas > 250000)
+
+  
+ggplot(despesasDoDeputado, mapping = aes(x = reorder(txNomeParlamentar, despesas), y= despesas)) + 
+  geom_point() + 
+  xlab("Nome do parlamentar") + 
+  ylab("Gastos totais") +
+  coord_flip()
+
+```
+
+Novamente, "Francisco Chapadinha" aparece como o parlamentar que mais gastou verba pública, com valores bem superiores se comparado com os outros.
+O mais interessante é que, embora o PT e PMDB sejam as maiores bancandas no parlamento, "Francisco Chapadinha" é parlamentar do PTN do Pará, comparando com a tabela de gastos por partido, podemos perceber que "Francisco Chapadinha" é responsável por boa parte dos gastos de seu partido inteiro.
